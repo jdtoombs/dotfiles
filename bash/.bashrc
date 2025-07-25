@@ -69,4 +69,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 alias claude="/home/jdtoombs/.claude/local/claude"
+alias cc="claude --continue"
+alias cr="claude --resume"
+alias lg="lazygit"
 eval "$(zoxide init bash)"

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Removes all worker worktrees and their branches.
+# Usage: worktrees-clean
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "Not a git repo"; exit 1; }
+WORKTREE_DIR="$REPO_ROOT/.worktrees"
+SESSION_NAME="$(basename "$REPO_ROOT")-workers"
+
+# Kill tmux session (must happen first so shells release the worktree dirs)
+tmux kill-session -t "$SESSION_NAME" 2>/dev/null && echo "Killed tmux session" || true
+sleep 1
+
+# Remove worktrees and branches
+for i in 1 2 3 4; do
+    dir="$WORKTREE_DIR/worker-$i"
+    branch="worker-$i"
+    if [ -d "$dir" ]; then
+        echo "Removing worktree worker-$i..."
+        git worktree remove "$dir" --force 2>/dev/null || rm -rf "$dir"
+    fi
+    git branch -D "$branch" 2>/dev/null && echo "Deleted branch $branch" || true
+done
+
+# Prune stale worktree entries
+git worktree prune
+
+rm -rf "$WORKTREE_DIR"
+echo "Done"

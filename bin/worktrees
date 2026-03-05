@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Opens 4 git worktrees in a tmux session with 4 panes for parallel Claude Code sessions.
+# Usage: worktrees [base-branch]
+#   base-branch defaults to "main"
+
+set -euo pipefail
+
+NUM_WORKERS=4
+BASE_BRANCH="${1:-main}"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "Not a git repo"; exit 1; }
+WORKTREE_DIR="$REPO_ROOT/.worktrees"
+SESSION_NAME="$(basename "$REPO_ROOT")-workers"
+
+mkdir -p "$WORKTREE_DIR"
+
+# Create worktrees
+for i in $(seq 1 $NUM_WORKERS); do
+    dir="$WORKTREE_DIR/worker-$i"
+    branch="worker-$i"
+    if [ -d "$dir" ]; then
+        echo "Worktree worker-$i already exists, reusing"
+    else
+        echo "Creating worktree worker-$i off $BASE_BRANCH..."
+        git worktree add "$dir" -B "$branch" "$BASE_BRANCH" 2>/dev/null || \
+        { echo "Failed to create worktree worker-$i"; exit 1; }
+    fi
+done
+
+if [ -n "${TMUX:-}" ]; then
+    # Inside tmux: create a new window in the current session with 2x2 grid
+    WINDOW_NAME="workers"
+    tmux new-window -n "$WINDOW_NAME" -c "$WORKTREE_DIR/worker-1"
+    WINDOW="$(tmux display-message -p '#{session_name}'):$WINDOW_NAME"
+    tmux split-window -v -t "$WINDOW" -c "$WORKTREE_DIR/worker-3"
+    tmux split-window -h -t "$WINDOW.1" -c "$WORKTREE_DIR/worker-2"
+    tmux split-window -h -t "$WINDOW.3" -c "$WORKTREE_DIR/worker-4"
+
+    for i in 1 2 3 4; do
+        tmux select-pane -t "$WINDOW.$i" -T "worker-$i"
+    done
+
+    tmux set-option pane-border-status top
+else
+    # Outside tmux: create a new session as before
+    tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
+
+    WINDOW="$SESSION_NAME:1"
+    tmux new-session -d -s "$SESSION_NAME" -c "$WORKTREE_DIR/worker-1"
+    tmux split-window -v -t "$WINDOW" -c "$WORKTREE_DIR/worker-3"
+    tmux split-window -h -t "$WINDOW.1" -c "$WORKTREE_DIR/worker-2"
+    tmux split-window -h -t "$WINDOW.3" -c "$WORKTREE_DIR/worker-4"
+
+    for i in 1 2 3 4; do
+        tmux select-pane -t "$WINDOW.$i" -T "worker-$i"
+    done
+
+    tmux set-option -t "$SESSION_NAME" pane-border-status top
+    tmux attach-session -t "$SESSION_NAME"
+fi

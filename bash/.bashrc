@@ -1,5 +1,8 @@
 # ~/.bashrc - Custom configuration with git branch and purple/blue theme
 
+# Homebrew - must be before interactive check so it's always available
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
 [[ $- != *i* ]] && return
 
 # History settings
@@ -68,7 +71,6 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-alias claude="/home/jdtoombs/.claude/local/claude"
 alias cc="claude --continue"
 alias cr="claude --resume"
 alias rde="docker compose down && docker system prune && docker compose up --build -d && npm start"

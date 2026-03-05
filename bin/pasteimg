@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Saves an image from the Windows clipboard into WSL as a temp PNG file.
+# Useful for piping screenshots into CLI tools like Claude Code that accept
+# file paths but can't access the Windows clipboard directly.
+# Usage: pasteimg  ->  prints /tmp/paste-<timestamp>.png
+
+file="/tmp/paste-$(date +%s).png"
+
+powershell.exe -NoProfile -Command "
+Add-Type -AssemblyName System.Windows.Forms;
+if ([Windows.Forms.Clipboard]::ContainsImage()) {
+  \$img = [Windows.Forms.Clipboard]::GetImage();
+  \$img.Save('$file');
+}
+" >/dev/null
+
+echo $file

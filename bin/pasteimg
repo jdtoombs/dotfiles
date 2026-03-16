@@ -4,7 +4,7 @@
 # file paths but can't access the Windows clipboard directly.
 # Usage: pasteimg  ->  prints /tmp/paste-<timestamp>.png
 
-file="/tmp/paste-$(date +%s).png"
+file="$(mktemp /tmp/paste-XXXXXXXX.png)"
 
 powershell.exe -NoProfile -Command "
 Add-Type -AssemblyName System.Windows.Forms;
@@ -14,4 +14,10 @@ if ([Windows.Forms.Clipboard]::ContainsImage()) {
 }
 " >/dev/null
 
-echo $file
+if [ ! -s "$file" ]; then
+    echo "No image in clipboard" >&2
+    rm -f "$file"
+    exit 1
+fi
+
+echo "$file"

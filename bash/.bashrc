@@ -1,7 +1,7 @@
 # ~/.bashrc - Custom configuration with git branch and purple/blue theme
 
 # Homebrew - must be before interactive check so it's always available
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+[ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 [[ $- != *i* ]] && return
 
@@ -50,10 +50,6 @@ if [ -d "$HOME/bin" ] ; then
     PATH="$HOME/bin:$PATH"
 fi
 
-if [ -d "$HOME/.cargo/bin" ] ; then
-    PATH="$HOME/.cargo/bin:$PATH"
-fi
-
 if [ -d "$HOME/.dotnet" ] ; then
     PATH="$PATH:$HOME/.dotnet"
 fi
@@ -75,6 +71,6 @@ alias cc="claude --continue"
 alias cr="claude --resume"
 alias rde="docker compose down && docker system prune && docker compose up --build -d && npm start"
 alias lg="lazygit"
-eval "$(zoxide init bash)"
+command -v zoxide &>/dev/null && eval "$(zoxide init bash)"
 export PATH="$PATH:/opt/mssql-tools18/bin"
-. "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"

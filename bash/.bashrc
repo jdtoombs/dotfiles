@@ -1,7 +1,11 @@
 # ~/.bashrc - Custom configuration with git branch and purple/blue theme
 
-# Homebrew - must be before interactive check so it's always available
+# Homebrew and nvm must be before interactive check so they're always available
 [ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && nvm use --silent default
 
 [[ $- != *i* ]] && return
 
@@ -63,8 +67,6 @@ echo -e "${LIGHT_PURPLE}Welcome back, ${LIGHT_BLUE}$(whoami)${LIGHT_PURPLE}!${RE
 echo -e "${LIGHT_GRAY}$(date)${RESET}"
 echo ""
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 alias cc="claude --continue"

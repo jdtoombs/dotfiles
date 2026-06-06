@@ -76,3 +76,6 @@ alias lg="lazygit"
 command -v zoxide &>/dev/null && eval "$(zoxide init bash)"
 export PATH="$PATH:/opt/mssql-tools18/bin"
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+alias pil="pi --landing"
+alias pir="pi --continue"

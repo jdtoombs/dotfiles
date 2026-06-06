@@ -79,4 +79,7 @@ export PATH="$PATH:/opt/mssql-tools18/bin"
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 alias pil="pi --landing"
-alias pir="pi --continue"
+alias pic="pi --continue"
+alias pir="pi --resume"
+alias pip="pi -p"
+alias pirev="pi --tools read,grep,find,ls"

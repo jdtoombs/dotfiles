@@ -1,0 +1,145 @@
+#!/usr/bin/env node
+const fs = require('node:fs');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+
+const agentDir = process.env.PI_CODING_AGENT_DIR || path.join(process.env.HOME || '.', '.pi', 'agent');
+const registryPath = path.join(agentDir, 'runtime', 'agents.json');
+const staleMs = 30_000;
+let selected = 0;
+let agents = [];
+let timer;
+let firstRender = true;
+
+function readRegistry() {
+  try {
+    return JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function pidAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function loadAgents() {
+  const now = Date.now();
+  agents = Object.values(readRegistry())
+    .filter((agent) => agent && Number.isFinite(agent.pid) && pidAlive(agent.pid) && now - agent.updatedAt <= staleMs)
+    .sort((a, b) => {
+      if (a.status !== b.status) return a.status === 'working' ? -1 : 1;
+      return b.updatedAt - a.updatedAt;
+    });
+  if (selected >= agents.length) selected = Math.max(0, agents.length - 1);
+}
+
+function beginFrame() {
+  if (firstRender) {
+    process.stdout.write('\x1b[?25l\x1b[?1049h\x1b[H\x1b[2J');
+    firstRender = false;
+  } else {
+    process.stdout.write('\x1b[?25l\x1b[H');
+  }
+}
+
+function endFrame() {
+  process.stdout.write('\x1b[J');
+}
+
+function color(code, text) {
+  return `\x1b[${code}m${text}\x1b[0m`;
+}
+
+function truncate(text, width) {
+  text = String(text ?? '');
+  if (text.length <= width) return text;
+  return text.slice(0, Math.max(0, width - 1)) + '…';
+}
+
+function tmuxTarget(agent) {
+  if (!agent.tmux?.paneId) return 'not in tmux';
+  return `${agent.tmux.sessionName ?? '?'}:${agent.tmux.windowIndex ?? '?'}.${agent.tmux.paneIndex ?? '?'} ${agent.tmux.paneId}`;
+}
+
+function agentTitle(agent) {
+  return agent.sessionName || agent.cwd.split('/').filter(Boolean).at(-1) || agent.cwd;
+}
+
+function render() {
+  loadAgents();
+  const width = process.stdout.columns || 120;
+  beginFrame();
+  const working = agents.filter((agent) => agent.status === 'working').length;
+  const idle = agents.length - working;
+
+  console.log(color('1;36', 'π agents') + color('2', `  ${agents.length} active (${working} working, ${idle} idle)`));
+  console.log(color('2', `registry: ${registryPath}`));
+  console.log(color('2', '↑/↓ or j/k select • enter jump to tmux pane • r refresh • q quit'));
+  console.log('');
+
+  if (agents.length === 0) {
+    console.log(color('2', 'No active agents. Start/reload a pi session to register it.'));
+    endFrame();
+    return;
+  }
+
+  const header = `${'STATUS'.padEnd(9)} ${'NAME'.padEnd(24)} ${'TMUX'.padEnd(16)} ${'AGE'.padEnd(6)} CWD`;
+  console.log(color('2', truncate(header, width)));
+
+  const now = Date.now();
+  for (let i = 0; i < agents.length; i++) {
+    const agent = agents[i];
+    const isSelected = i === selected;
+    const statusColor = agent.status === 'working' ? '33' : '32';
+    const age = `${Math.floor((now - agent.updatedAt) / 1000)}s`;
+    const marker = isSelected ? '›' : ' ';
+    const line = `${marker} ${agent.status.padEnd(7)} ${truncate(agentTitle(agent), 24).padEnd(24)} ${truncate(tmuxTarget(agent), 16).padEnd(16)} ${age.padEnd(6)} ${agent.cwd}`;
+    const styled = line.replace(agent.status, color(statusColor, agent.status));
+    console.log(isSelected ? color('7', truncate(styled, width)) : truncate(styled, width));
+  }
+  endFrame();
+}
+
+function jumpSelected() {
+  const agent = agents[selected];
+  if (!agent?.tmux?.paneId) return;
+  try {
+    if (agent.tmux.sessionName) execFileSync('tmux', ['switch-client', '-t', agent.tmux.sessionName], { stdio: 'ignore' });
+    if (agent.tmux.sessionName && agent.tmux.windowIndex) {
+      execFileSync('tmux', ['select-window', '-t', `${agent.tmux.sessionName}:${agent.tmux.windowIndex}`], { stdio: 'ignore' });
+    }
+    execFileSync('tmux', ['select-pane', '-t', agent.tmux.paneId], { stdio: 'ignore' });
+  } catch {}
+}
+
+function cleanup() {
+  if (timer) clearInterval(timer);
+  if (process.stdin.isTTY) process.stdin.setRawMode(false);
+  process.stdout.write('\x1b[?1049l\x1b[?25h\x1b[0m\n');
+}
+
+process.on('exit', cleanup);
+process.on('SIGINT', () => process.exit(0));
+process.on('SIGTERM', () => process.exit(0));
+
+if (process.stdin.isTTY) {
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.on('data', (data) => {
+    const key = data.toString('utf8');
+    if (key === 'q' || key === '\u0003') process.exit(0);
+    if (key === 'r') render();
+    if (key === 'j' || key === '\x1b[B') { selected = Math.min(agents.length - 1, selected + 1); render(); }
+    if (key === 'k' || key === '\x1b[A') { selected = Math.max(0, selected - 1); render(); }
+    if (key === '\r' || key === '\n') jumpSelected();
+  });
+}
+
+render();
+timer = setInterval(render, 1000);

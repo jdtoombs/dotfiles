@@ -2,3 +2,10 @@
 *.swo
 .env
 .DS_Store
+
+# Never commit Pi secrets/runtime state
+pi/auth.json
+pi/sessions/
+pi/runtime/
+pi/npm/
+pi/git/

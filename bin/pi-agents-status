@@ -1,0 +1,40 @@
+#!/usr/bin/env node
+const fs = require('node:fs');
+const path = require('node:path');
+
+const agentDir = process.env.PI_CODING_AGENT_DIR || path.join(process.env.HOME || '.', '.pi', 'agent');
+const registryPath = path.join(agentDir, 'runtime', 'agents.json');
+const staleMs = 30_000;
+
+function readRegistry() {
+  try {
+    return JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function pidAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const now = Date.now();
+const agents = Object.values(readRegistry()).filter((agent) =>
+  agent && Number.isFinite(agent.pid) && pidAlive(agent.pid) && now - agent.updatedAt <= staleMs,
+);
+
+const working = agents.filter((agent) => agent.status === 'working').length;
+const idle = agents.length - working;
+
+if (agents.length === 0) {
+  process.stdout.write('#[bg=#1a1b26,fg=#565f89] π 0 ');
+} else if (working > 0) {
+  process.stdout.write(`#[bg=#e0af68,fg=#1a1b26,bold] π ${agents.length} #[bg=#3b4261,fg=#e0af68] ${working} working `);
+} else {
+  process.stdout.write(`#[bg=#9ece6a,fg=#1a1b26,bold] π ${agents.length} #[bg=#3b4261,fg=#9ece6a] ${idle} idle `);
+}

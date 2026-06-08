@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Prefer the renamed dashboard, but also handle the older name if it exists.
+window_id="$(tmux list-windows -F '#{window_id}	#{window_name}' \
+  | awk -F '\t' '$2 == "π-dash" || $2 == "agent-dash" { print $1; exit }')"
+
+if [[ -n "$window_id" ]]; then
+  tmux select-window -t "$window_id"
+else
+  tmux new-window -n 'π-dash' 'pi-agents'
+fi

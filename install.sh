@@ -40,6 +40,9 @@ link "$DOTFILES/tmux/.tmux.conf" "$HOME/.tmux.conf"
 echo "alacritty:"
 link "$DOTFILES/alacritty/alacritty.toml" "$HOME/.config/alacritty/alacritty.toml"
 
+echo "nvim:"
+link "$DOTFILES/nvim" "$HOME/.config/nvim"
+
 echo "claude:"
 link "$DOTFILES/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 link "$DOTFILES/claude/commands" "$HOME/.claude/commands"
@@ -52,5 +55,14 @@ for script in "$DOTFILES/bin/"*; do
     link "$script" "$HOME/bin/$(basename "$script")"
 done
 
+echo "pi:"
+mkdir -p "$HOME/.pi/agent"
+link "$DOTFILES/pi/settings.json" "$HOME/.pi/agent/settings.json"
+link "$DOTFILES/pi/keybindings.json" "$HOME/.pi/agent/keybindings.json"
+link "$DOTFILES/pi/extensions" "$HOME/.pi/agent/extensions"
+link "$DOTFILES/pi/prompts" "$HOME/.pi/agent/prompts"
+link "$DOTFILES/pi/skills" "$HOME/.pi/agent/skills"
+link "$DOTFILES/pi/scripts" "$HOME/.pi/agent/scripts"
+
 echo ""
-echo "done. run 'source ~/.bashrc' to reload."
+echo "done. run 'source ~/.bashrc', 'tmux source-file ~/.tmux.conf', and '/reload' in pi to reload."

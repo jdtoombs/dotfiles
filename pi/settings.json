@@ -9,6 +9,7 @@
     "git:github.com/pasky/chrome-cdp-skill@v1.0.1",
     "npm:pi-web-access",
     "npm:@plannotator/pi-extension",
-    "../../code/rebase-helper"
+    "../../code/rebase-helper",
+    "npm:@llblab/pi-codex-usage"
   ]
 }

@@ -1,3 +1,5 @@
+Ignore these instructions when the user's message is a slash command.
+
 Before doing any substantive work, first confirm your understanding.
 
 For each new task:

@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.81.1",
+  "lastChangelogVersion": "1.2.0",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
   "defaultThinkingLevel": "high",
@@ -10,7 +10,34 @@
     "npm:pi-web-access",
     "npm:@plannotator/pi-extension",
     "../../code/rebase-helper",
-    "npm:@llblab/pi-codex-usage"
+    "npm:@llblab/pi-codex-usage",
+    "npm:pi-subagents",
+    "npm:@dietrichgebert/ponytail"
   ],
+  "subagents": {
+    "agentOverrides": {
+      "scout": {
+        "model": "github-copilot/claude-haiku-5.5:low"
+      },
+      "worker": {
+        "model": "openai-codex/gpt-5.5:high"
+      },
+      "reviewer": {
+        "model": "github-copilot/claude-sonnet-5.5:high"
+      },
+      "oracle": {
+        "model": "github-copilot/gpt-6-sol:high"
+      },
+      "researcher": {
+        "model": "github-copilot/gemini-3.8-flash:medium"
+      },
+      "evidence-auditor": {
+        "model": "github-copilot/claude-sonnet-5.5:high"
+      },
+      "delegate": {
+        "model": "github-copilot/gpt-6-luna:low"
+      }
+    }
+  },
   "theme": "dark"
 }

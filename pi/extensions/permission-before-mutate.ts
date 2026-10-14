@@ -309,6 +309,10 @@ export default function (pi: ExtensionAPI) {
 	pi.on("tool_call", async (event, ctx) => {
 		if (ignoreForSession || isReadOnlyToolCall(event.toolName, event.input)) return undefined;
 
+		// Background subagents run without an interactive UI, so approval prompts cannot
+		// be answered there. The parent run still controls whether a subagent is launched.
+		if (!ctx.hasUI && process.env.PI_SUBAGENT_PARENT_SESSION) return undefined;
+
 		if (!ctx.hasUI) {
 			return {
 				block: true,
